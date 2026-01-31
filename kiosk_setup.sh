@@ -4,7 +4,7 @@
 
 # YAPILANDIRMA
 KIOSK_ID="KIOSK-001"
-KIOSK_URL="http://192.168.1.100:3000"
+KIOSK_URL="http://192.168.1.46:3000"
 
 echo "Kiosk kurulumu başlıyor..."
 echo "Kiosk ID: $KIOSK_ID"
