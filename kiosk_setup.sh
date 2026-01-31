@@ -1,39 +1,61 @@
 #!/bin/bash
-# RASPBERRY PI KIOSK KURULUM
-# Kullanım: chmod +x kiosk_setup.sh && sudo ./kiosk_setup.sh
+# RASPBERRY PI KIOSK KURULUM (FIXED + AUTOBOOT)
 
 KIOSK_ID="KIOSK-001"
 KIOSK_URL="http://192.168.1.46:3000"
 
-# Paketleri kur
-apt-get update
-apt-get install -y chromium unclutter
+# Aktif kullanıcıyı bul
+USER_NAME=$(logname)
+HOME_DIR="/home/$USER_NAME"
 
-# Kiosk scripti
-cat > /home/pi/kiosk.sh << EOF
+echo "Kullanıcı: $USER_NAME"
+echo "Home: $HOME_DIR"
+
+# Paketleri kur
+sudo apt-get update
+sudo apt-get install -y chromium unclutter x11-xserver-utils
+
+# Kiosk scripti oluştur
+cat > $HOME_DIR/kiosk.sh << EOF
 #!/bin/bash
+export DISPLAY=:0
+
 xset s off
 xset s noblank
 xset -dpms
+
 unclutter -idle 0.1 -root &
-chromium --kiosk --noerrdialogs --disable-infobars --disable-pinch --overscroll-history-navigation=0 --use-fake-ui-for-media-stream "${KIOSK_URL}?kiosk_id=${KIOSK_ID}"
-EOF
-chmod +x /home/pi/kiosk.sh
 
-# Autostart
-mkdir -p /home/pi/.config/lxsession/LXDE-pi
-cat > /home/pi/.config/lxsession/LXDE-pi/autostart << EOF
-@xset s off
-@xset -dpms
-@xset s noblank
-@unclutter -idle 0.1 -root
-@/home/pi/kiosk.sh
+chromium --kiosk --noerrdialogs --disable-infobars \
+--disable-pinch --overscroll-history-navigation=0 \
+--use-fake-ui-for-media-stream "${KIOSK_URL}?kiosk_id=${KIOSK_ID}"
 EOF
 
-# Mikrofon izni
-mkdir -p /etc/chromium/policies/managed
-cat > /etc/chromium/policies/managed/policy.json << EOF
-{"AudioCaptureAllowed":true,"AudioCaptureAllowedUrls":["*"],"DefaultMediaStreamSetting":1}
+chmod +x $HOME_DIR/kiosk.sh
+
+# SYSTEMD SERVICE (en sağlam yöntem)
+sudo tee /etc/systemd/system/kiosk.service > /dev/null << EOF
+[Unit]
+Description=Chromium Kiosk Mode
+After=graphical.target network-online.target
+
+[Service]
+User=$USER_NAME
+Environment=DISPLAY=:0
+ExecStart=$HOME_DIR/kiosk.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target
 EOF
 
-echo "Kurulum tamam. Reboot at: sudo reboot"
+# Servisi aktif et
+sudo systemctl daemon-reload
+sudo systemctl enable kiosk.service
+
+echo "======================================"
+echo "Kiosk kurulum tamamlandı"
+echo "Simdi reboot at:"
+echo "sudo reboot"
+echo "======================================"
