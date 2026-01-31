@@ -7,7 +7,7 @@ KIOSK_URL="http://192.168.1.46:3000"
 
 # Paketleri kur
 apt-get update
-apt-get install -y chromium-browser unclutter
+apt-get install -y chromium unclutter
 
 # Kiosk scripti
 cat > /home/pi/kiosk.sh << EOF
@@ -16,7 +16,7 @@ xset s off
 xset s noblank
 xset -dpms
 unclutter -idle 0.1 -root &
-chromium-browser --kiosk --noerrdialogs --disable-infobars --disable-pinch --overscroll-history-navigation=0 --use-fake-ui-for-media-stream "${KIOSK_URL}?kiosk_id=${KIOSK_ID}"
+chromium --kiosk --noerrdialogs --disable-infobars --disable-pinch --overscroll-history-navigation=0 --use-fake-ui-for-media-stream "${KIOSK_URL}?kiosk_id=${KIOSK_ID}"
 EOF
 chmod +x /home/pi/kiosk.sh
 
